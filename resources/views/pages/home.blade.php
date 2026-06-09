@@ -64,7 +64,7 @@
 <section class="tour-place-section section-padding fix">
     <div class="container">
         <div class="section-title text-center">
-            <h2 class="text-anim">UPCOMING TREKS FROM PUNE AND MUMBAI</h2>
+            <h2 class="text-anim">UPCOMING TREKS FROM PUNE AND MUMBAI Neww</h2>
             <p class="wow fadeInUp" data-wow-delay=".5s">Educational outings, treks, and group programs across Maharashtra — pickup from {{ tour_pickup_locations_label() }} only</p>
         </div>
         @include('tours.partials.pickup-notice', ['class' => 'wow fadeInUp mb-4'])
