@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If the site runs in a subfolder (e.g. https://example.com/myapp/), uncomment:
+    # RewriteBase /myapp/
+
+    # When document root is this folder (not /public), send requests into public/.
+    # Best practice: set document root to the public/ directory and remove this file if so.
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+</IfModule>
