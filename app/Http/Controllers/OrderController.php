@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\OrderBookingMail;
 use App\Models\Order;
 use App\Models\Tour;
 use App\Models\UserAlert;
 use App\Services\RazorpayPaymentService;
-use App\Services\TrekDeclarationPdfService;
+use App\Services\TourBookingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Razorpay\Api\Errors\SignatureVerificationError;
 
@@ -24,7 +21,7 @@ class OrderController extends Controller
         $this->middleware('auth');
     }
 
-    public function store(Request $request, TrekDeclarationPdfService $pdfService): RedirectResponse
+    public function store(Request $request, TourBookingService $booking): RedirectResponse
     {
         $data = $request->validate([
             'tour_id' => ['required', 'exists:tours,id'],
@@ -37,56 +34,18 @@ class OrderController extends Controller
         ]);
 
         $tour = Tour::query()->whereKey($data['tour_id'])->where('is_active', true)->firstOrFail();
-        $travelers = (int) $data['travelers'];
 
-        $order = Order::create([
-            'reference' => 'NT-'.strtoupper(Str::random(10)),
-            'user_id' => $request->user()->id,
-            'tour_id' => $tour->id,
-            'status' => 'pending',
-            'amount' => (float) $tour->price * $travelers,
-            'travel_date' => $data['travel_date'],
-            'travelers' => $travelers,
-            'notes' => $data['notes'] ?? null,
-            'declaration_accepted_at' => now(),
-            'payment_status' => Order::PAYMENT_AWAITING,
-        ]);
-
-        $pdfPath = $pdfService->generateAndStore($order);
-        $order->update(['declaration_pdf_path' => $pdfPath]);
-
-        $order->load(['user', 'tour']);
-
-        $mailSent = $this->sendBookingEmail($order, $request->user()->email);
-
-        $admins = \App\Models\User::query()->where('is_admin', true)->get();
-        foreach ($admins as $admin) {
-            UserAlert::create([
-                'user_id' => $admin->id,
-                'title' => 'New tour booking',
-                'body' => "Order {$order->reference} for {$tour->title} ({$travelers} members). Awaiting online payment.",
-                'type' => 'order',
-            ]);
-        }
-
-        if (! $mailSent) {
-            foreach ($admins as $admin) {
-                UserAlert::create([
-                    'user_id' => $admin->id,
-                    'title' => 'Booking email failed',
-                    'body' => "Could not email {$request->user()->email} for order {$order->reference}. Resend from admin or run: php artisan orders:resend-email {$order->id}",
-                    'type' => 'order',
-                ]);
-            }
-        }
-
-        $statusMessage = $mailSent
-            ? 'Booking received. Complete payment below. Declaration sent to your email.'
-            : 'Booking received. Complete payment below. Confirmation email could not be sent right now — check spam later or contact us with reference '.$order->reference.'.';
+        $order = $booking->createOrder(
+            $request->user(),
+            $tour,
+            (int) $data['travelers'],
+            $data['travel_date'],
+            $data['notes'] ?? null
+        );
 
         return redirect()
             ->route('orders.payment', $order)
-            ->with($mailSent ? 'status' : 'warning', $statusMessage);
+            ->with('status', 'Booking received. Complete payment below. Declaration sent to your email.');
     }
 
     public function payment(Request $request, Order $order, RazorpayPaymentService $razorpay): View|RedirectResponse
@@ -105,24 +64,34 @@ class OrderController extends Controller
             return redirect()->route('dashboard');
         }
 
-        try {
-            $razorpayOrder = $razorpay->ensureOrder($order);
-        } catch (\Throwable $e) {
-            Log::error('Razorpay order creation failed', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
+        $paymentError = null;
+        $razorpayOrder = null;
 
-            return redirect()
-                ->route('dashboard')
-                ->with('warning', 'Unable to start payment right now. Please try again in a few minutes or contact support.');
+        if (! $razorpay->isConfigured()) {
+            $paymentError = 'Online payment is not configured yet. Please contact support to complete your booking.';
+        } else {
+            try {
+                $razorpayOrder = $razorpay->ensureOrder($order);
+            } catch (\Throwable $e) {
+                Log::error('Razorpay order creation failed', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $paymentError = str_contains(strtolower($e->getMessage()), 'authentication')
+                    ? (config('app.debug')
+                        ? 'Razorpay login failed: RAZORPAY_KEY / RAZORPAY_SECRET in .env are wrong or expired. Open dashboard.razorpay.com → Settings → API Keys, copy Test Mode Key ID + Secret into .env, then run: php artisan config:clear'
+                        : 'Payment gateway credentials are invalid. Please contact support — we cannot process online payment until this is fixed.')
+                    : 'Unable to start payment right now. Please try again in a few minutes or contact support.';
+            }
         }
 
         return view('orders.payment', [
             'order' => $order,
+            'paymentError' => $paymentError,
             'razorpayKey' => $razorpay->publicKey(),
-            'razorpayOrderId' => $razorpayOrder['id'],
-            'razorpayAmount' => (int) $razorpayOrder['amount'],
+            'razorpayOrderId' => $razorpayOrder['id'] ?? null,
+            'razorpayAmount' => isset($razorpayOrder['amount']) ? (int) $razorpayOrder['amount'] : $razorpay->amountInPaise($order),
         ]);
     }
 
@@ -188,29 +157,8 @@ class OrderController extends Controller
         ]);
     }
 
-    public function sendBookingEmail(Order $order, ?string $email = null): bool
+    public function sendBookingEmail(Order $order, ?string $email = null, ?TourBookingService $booking = null): bool
     {
-        $recipient = $email ?? $order->user?->email;
-
-        if (! $recipient) {
-            return false;
-        }
-
-        $order->loadMissing(['user', 'tour']);
-
-        try {
-            Mail::to($recipient)->send(new OrderBookingMail($order));
-
-            return true;
-        } catch (\Throwable $e) {
-            Log::error('Booking confirmation email failed', [
-                'order_id' => $order->id,
-                'reference' => $order->reference,
-                'recipient' => $recipient,
-                'error' => $e->getMessage(),
-            ]);
-
-            return false;
-        }
+        return ($booking ?? app(TourBookingService::class))->sendBookingEmail($order, $email);
     }
 }

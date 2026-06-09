@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -34,6 +35,9 @@ class CategoryController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validateData($request);
+        if ($request->hasFile('featured_image')) {
+            $data['featured_image'] = $request->file('featured_image')->store('categories', 'public');
+        }
         Category::create($data);
 
         return redirect()->route('admin.categories.index')->with('status', 'Category created.');
@@ -47,6 +51,17 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category): RedirectResponse
     {
         $data = $this->validateData($request, $category->id);
+        if ($request->boolean('remove_featured_image')) {
+            if ($category->featured_image) {
+                Storage::disk('public')->delete($category->featured_image);
+            }
+            $data['featured_image'] = null;
+        } elseif ($request->hasFile('featured_image')) {
+            if ($category->featured_image) {
+                Storage::disk('public')->delete($category->featured_image);
+            }
+            $data['featured_image'] = $request->file('featured_image')->store('categories', 'public');
+        }
         $category->update($data);
 
         return redirect()->route('admin.categories.index')->with('status', 'Category updated.');
@@ -54,6 +69,9 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
+        if ($category->featured_image) {
+            Storage::disk('public')->delete($category->featured_image);
+        }
         $category->delete();
 
         return redirect()->route('admin.categories.index')->with('status', 'Category deleted.');
@@ -65,6 +83,7 @@ class CategoryController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'string', 'max:50'],
+            'featured_image' => ['nullable', 'image', 'max:4096'],
         ]);
         $base = $data['slug'] ?: $data['name'];
         $slug = Str::slug($base);
@@ -80,6 +99,7 @@ class CategoryController extends Controller
             }
         }
         $data['slug'] = $slug;
+        unset($data['featured_image']);
 
         return $data;
     }

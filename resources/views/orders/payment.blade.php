@@ -117,6 +117,13 @@
                             <p class="small text-muted mb-3">Payment ID: <code>{{ $order->razorpay_payment_id }}</code></p>
                         @endif
                         <a href="{{ route('dashboard') }}" class="theme-btn border-0">Go to dashboard</a>
+                    @elseif (! empty($paymentError))
+                        <div class="alert alert-warning text-start mb-4">{{ $paymentError }}</div>
+                        <p class="payment-qr-hint mb-4">You can reach us on WhatsApp or email with your booking reference <strong>{{ $order->reference }}</strong> and we will help you complete payment.</p>
+                        <a href="https://wa.me/918788883003?text={{ rawurlencode('Payment help for order '.$order->reference) }}" target="_blank" rel="noopener noreferrer" class="theme-btn border-0 px-4 py-3 me-2 mb-2">
+                            <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp support
+                        </a>
+                        <a href="{{ route('dashboard') }}" class="theme-btn border-0 px-4 py-3 mb-2" style="background:#555;">Back to dashboard</a>
                     @else
                         <p class="payment-qr-hint mb-4">Pay securely with UPI, debit/credit card, or net banking. Your booking confirms instantly after successful payment.</p>
                         <button type="button" id="rzp-pay-btn" class="theme-btn border-0 px-5 py-3">
@@ -143,7 +150,7 @@
 
 @include('orders.partials.payment-styles')
 
-@if (! $paid)
+@if (! $paid && empty($paymentError))
 @push('scripts')
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>

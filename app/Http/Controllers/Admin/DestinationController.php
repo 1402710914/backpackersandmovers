@@ -47,7 +47,12 @@ class DestinationController extends Controller
     public function update(Request $request, Destination $destination): RedirectResponse
     {
         $data = $this->validateData($request, $destination->id);
-        if ($request->hasFile('featured_image')) {
+        if ($request->boolean('remove_featured_image')) {
+            if ($destination->featured_image) {
+                Storage::disk('public')->delete($destination->featured_image);
+            }
+            $data['featured_image'] = null;
+        } elseif ($request->hasFile('featured_image')) {
             if ($destination->featured_image) {
                 Storage::disk('public')->delete($destination->featured_image);
             }

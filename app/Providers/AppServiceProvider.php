@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Category;
+use App\Services\CartService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -15,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(CartService::class);
     }
 
     /**
@@ -46,10 +47,12 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('layouts.roavio', function ($view) {
             $navTourCategories = Category::orderedTourNavCategories();
+            $cartItemCount = app(CartService::class)->count();
 
             $view->with([
                 'navTourCategories' => $navTourCategories,
                 'footerTourCategories' => $navTourCategories,
+                'cartItemCount' => $cartItemCount,
             ]);
         });
     }

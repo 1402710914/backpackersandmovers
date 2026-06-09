@@ -11,7 +11,7 @@
 
 @section('content')
 <div class="tour-category-page">
-    <header class="tour-category-hero bg-cover" style="background-image: url('{{ asset('assets/img/inner-page/breadcrumb/bg-4.jpg') }}');">
+    <header class="tour-category-hero bg-cover" style="background-image: url('{{ $categoryPage->featured_image ? $categoryPage->listingImageUrl() : asset('assets/img/inner-page/breadcrumb/bg-4.jpg') }}');">
         <div class="container">
             <ul class="breadcrumb-items wow fadeInUp" data-wow-delay=".2s">
                 <li><a href="{{ route('home') }}">Home</a></li>

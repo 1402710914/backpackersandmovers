@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\UserAlertController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ContactPageController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
@@ -39,6 +40,15 @@ Route::post('/contact', [ContactPageController::class, 'store'])->name('contact.
 Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
 Route::get('/tours/category/{category}', [TourController::class, 'category'])->name('tours.category');
 Route::get('/tours/{slug}', [TourController::class, 'show'])->name('tours.show');
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+Route::put('/cart/{key}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{key}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::middleware('auth')->group(function () {
+    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::post('/cart/checkout', [CartController::class, 'processCheckout'])->name('cart.checkout.store');
+});
 
 Route::get('/destinations', [DestinationController::class, 'index'])->name('destinations.index');
 Route::get('/destinations/{slug}', [DestinationController::class, 'show'])->name('destinations.show');

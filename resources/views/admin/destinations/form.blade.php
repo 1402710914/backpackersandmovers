@@ -18,7 +18,10 @@
         @if ($destination->exists && $destination->featured_image)
             <div class="mb-2">
                 <img src="{{ storage_url($destination->featured_image) }}" alt="" class="rounded border" style="max-width: 280px; max-height: 160px; object-fit: cover;">
-                <div class="form-text">Upload a new file below to replace this image.</div>
+            </div>
+            <div class="form-check mb-2">
+                <input type="checkbox" name="remove_featured_image" value="1" class="form-check-input" id="remove-destination-featured" {{ old('remove_featured_image') ? 'checked' : '' }}>
+                <label class="form-check-label" for="remove-destination-featured">Remove featured image</label>
             </div>
         @endif
         <input type="file" name="featured_image" class="form-control @error('featured_image') is-invalid @enderror" accept="image/*">

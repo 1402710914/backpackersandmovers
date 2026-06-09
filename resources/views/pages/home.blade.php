@@ -6,13 +6,6 @@
 @if (site_setting_bool('home_tour_programs_section_enabled'))
 {{-- Tour programs (categories with active tours) --}}
 @php
-    $categoryImages = [
-        'educational-one-day-outing' => 'assets/img/home-2/destination/01.jpg',
-        'educational-field-visit' => 'assets/img/home-2/destination/02.jpg',
-        'agri-tourism' => 'assets/img/home-2/destination/03.jpg',
-        'one-day-trek' => 'assets/img/home-2/destination/04.jpg',
-        'one-night-camping' => 'assets/img/home-2/destination/05.jpg',
-    ];
     $destColPattern = [
         'col-xl-3 col-lg-4 col-md-6',
         'col-xl-6 col-lg-4 col-md-6',
@@ -32,13 +25,12 @@
             <div class="row g-3">
                 @forelse ($featuredTourCategories as $category)
                     @php
-                        $fbImg = $categoryImages[$category->slug] ?? 'assets/img/home-2/destination/'.str_pad((string) (($loop->iteration - 1) % 6 + 1), 2, '0', STR_PAD_LEFT).'.jpg';
                         $tourCount = $category->tours_count ?? $category->tours()->where('is_active', true)->count();
                     @endphp
                     <div class="{{ $destColPattern[$loop->index] ?? 'col-xl-4 col-lg-6 col-md-6' }} wow fadeInUp" data-wow-delay=".{{ min(2 + $loop->iteration, 9) }}s">
                         <div class="destination-image-item">
                             <div class="destination-image">
-                                <img src="{{ asset($fbImg) }}" alt="{{ $category->name }}">
+                                <img src="{{ $category->listingImageUrl() }}" alt="{{ $category->name }}">
                                 <div class="destination-content">
                                     <h3>
                                         <a href="{{ route('tours.category', $category->slug) }}">{{ $category->name }}</a>
@@ -64,7 +56,7 @@
 <section class="tour-place-section section-padding fix">
     <div class="container">
         <div class="section-title text-center">
-            <h2 class="text-anim">UPCOMING TREKS FROM PUNE AND MUMBAI Neww</h2>
+            <h2 class="text-anim">UPCOMING TREKS FROM PUNE AND MUMBAI</h2>
             <p class="wow fadeInUp" data-wow-delay=".5s">Educational outings, treks, and group programs across Maharashtra — pickup from {{ tour_pickup_locations_label() }} only</p>
         </div>
         @include('tours.partials.pickup-notice', ['class' => 'wow fadeInUp mb-4'])

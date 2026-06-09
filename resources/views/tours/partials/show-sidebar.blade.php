@@ -1,9 +1,10 @@
 @php
     $whatsappMessage = rawurlencode('Hi, I would like to enquire about: '.$tour->title.' — '.route('tours.show', $tour->slug));
     $tourTypeLabel = $tour->isStudentGroupTour() ? 'School & college program' : 'Group tour';
+    $enquirySubject = 'Enquiry: '.$tour->title;
 @endphp
 
-<aside id="tour-booking" class="tour-sidebar position-sticky">
+<aside class="tour-sidebar position-sticky">
     <div class="tour-sidebar__card">
         <div class="tour-sidebar__head">
             @if ($tour->is_featured)
@@ -87,72 +88,68 @@
             </ul>
         </div>
 
-        <div class="tour-sidebar__section tour-sidebar__section--booking">
+        <div id="tour-enquiry" class="tour-sidebar__section tour-sidebar__section--enquiry">
+            <h5 class="tour-sidebar__section-title">
+                <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                Send an enquiry
+            </h5>
+            <p class="tour-sidebar__section-intro">Ask about dates, group size, or custom plans. We reply by email or phone.</p>
+
+            <form action="{{ route('contact.submit') }}" method="post" class="tour-sidebar__form">
+                @csrf
+                <input type="hidden" name="subject" value="{{ $enquirySubject }}">
+                <div class="mb-3">
+                    <label class="form-label" for="enquiry_name">Your name</label>
+                    <input type="text" id="enquiry_name" name="name" class="form-control" value="{{ old('subject') === $enquirySubject ? old('name') : (auth()->user()->name ?? '') }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="enquiry_email">Email</label>
+                    <input type="email" id="enquiry_email" name="email" class="form-control" value="{{ old('subject') === $enquirySubject ? old('email') : (auth()->user()->email ?? '') }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="enquiry_phone">Phone</label>
+                    <input type="text" id="enquiry_phone" name="phone" class="form-control" value="{{ old('subject') === $enquirySubject ? old('phone') : '' }}" placeholder="Optional">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="enquiry_message">Your question</label>
+                    <textarea id="enquiry_message" name="message" class="form-control" rows="3" placeholder="School name, preferred dates, group size…" required>{{ old('subject') === $enquirySubject ? old('message') : '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-outline-secondary w-100 mb-0">
+                    <i class="fa-regular fa-paper-plane" aria-hidden="true"></i>
+                    Send enquiry
+                </button>
+            </form>
+        </div>
+
+        <div id="tour-booking" class="tour-sidebar__section tour-sidebar__section--booking">
             <h5 class="tour-sidebar__section-title">
                 <i class="fa-regular fa-calendar-check" aria-hidden="true"></i>
-                Request a booking
+                Book this tour
             </h5>
+            <p class="tour-sidebar__section-intro">Choose your date and group size, add to cart, then checkout to confirm your booking.</p>
 
-            @auth
-                <form action="{{ route('orders.store') }}" method="post" class="tour-sidebar__form">
-                    @csrf
-                    <input type="hidden" name="tour_id" value="{{ $tour->id }}">
-                    <div class="mb-3">
-                        <label class="form-label" for="travel_date">Preferred travel date</label>
-                        <input type="date" id="travel_date" name="travel_date" class="form-control" value="{{ old('travel_date') }}" min="{{ now()->toDateString() }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="travelers">Number of members</label>
-                        <input type="number" id="travelers" name="travelers" class="form-control" min="1" max="50" value="{{ old('travelers', 1) }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="notes">School name &amp; notes</label>
-                        <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="School/college name, pickup city (Pune or Mumbai), grade, special needs">{{ old('notes') }}</textarea>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input @error('declaration_accepted') is-invalid @enderror" id="declaration_accepted" name="declaration_accepted" value="1" @checked(old('declaration_accepted')) required>
-                            <label class="form-check-label small" for="declaration_accepted">
-                                I accept the <strong>Trek Declaration &amp; Green Pledge</strong> (sent by email &amp; PDF after booking).
-                            </label>
-                            @error('declaration_accepted')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-                        <details class="small text-muted mt-2">
-                            <summary class="cursor-pointer">Read declaration</summary>
-                            <div class="mt-2 pe-1" style="max-height: 160px; overflow-y: auto;">
-                                @foreach (preg_split('/\n\s*\n/', trim(config('trek-declaration.declaration'))) as $paragraph)
-                                    <p class="mb-2">{{ $paragraph }}</p>
-                                @endforeach
-                                <p class="mb-1 fw-semibold">{{ config('trek-declaration.green_pledge_title') }}</p>
-                                <ul class="ps-3 mb-2">
-                                    @foreach (config('trek-declaration.green_pledge_items') as $item)
-                                        <li>{{ $item }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </details>
-                    </div>
-                    <button type="submit" class="theme-btn w-100 border-0">Submit booking request</button>
-                </form>
-            @else
-                <p class="tour-sidebar__login-hint">Sign in to send a booking request. We confirm availability and reply by email.</p>
-                <a href="{{ route('login') }}" class="theme-btn w-100 border-0 text-center d-block mb-2">Log in to book</a>
-                <a href="{{ route('register') }}" class="btn btn-outline-secondary w-100 mb-0">Create account</a>
-            @endauth
+            <form action="{{ route('cart.store') }}" method="post" class="tour-sidebar__form">
+                @csrf
+                <input type="hidden" name="tour_id" value="{{ $tour->id }}">
+                <div class="mb-3">
+                    <label class="form-label" for="cart_travel_date">Preferred travel date</label>
+                    <input type="date" id="cart_travel_date" name="travel_date" class="form-control" value="{{ old('travel_date') }}" min="{{ now()->toDateString() }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="cart_travelers">Number of members</label>
+                    <input type="number" id="cart_travelers" name="travelers" class="form-control" min="1" max="50" value="{{ old('travelers', 1) }}" required>
+                </div>
+                <button type="submit" class="theme-btn w-100 border-0 mb-0">
+                    <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
+                    Add to cart &amp; continue
+                </button>
+            </form>
         </div>
 
         <div class="tour-sidebar__actions">
             <a href="https://wa.me/918788883003?text={{ $whatsappMessage }}" class="tour-sidebar__btn tour-sidebar__btn--whatsapp" target="_blank" rel="noopener noreferrer">
                 <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
                 Chat on WhatsApp
-            </a>
-            <a href="{{ route('contact') }}" class="tour-sidebar__btn tour-sidebar__btn--outline">
-                <i class="fa-regular fa-envelope" aria-hidden="true"></i>
-                Contact our team
-            </a>
-            <a href="mailto:backpackersandmovers@gmail.com?subject={{ rawurlencode('Enquiry: '.$tour->title) }}" class="tour-sidebar__btn tour-sidebar__btn--ghost">
-                <i class="fa-solid fa-envelope" aria-hidden="true"></i>
-                backpackersandmovers@gmail.com
             </a>
         </div>
 
@@ -181,6 +178,8 @@
                     @if ($tour->hasFaqSection())
                         <a href="#tour-faq">FAQ</a>
                     @endif
+                    <a href="#tour-enquiry">Enquiry</a>
+                    <a href="#tour-booking">Booking</a>
                 </div>
             </div>
         @endif

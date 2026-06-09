@@ -458,8 +458,17 @@
     padding: 1.1rem 1.15rem;
     border-bottom: 1px solid rgba(21, 21, 21, 0.06);
 }
+.tour-sidebar__section--enquiry {
+    background: #fff;
+}
 .tour-sidebar__section--booking {
     background: #fafafa;
+}
+.tour-sidebar__section-intro {
+    font-size: 0.82rem;
+    color: #666;
+    line-height: 1.5;
+    margin: -0.35rem 0 0.85rem;
 }
 .tour-sidebar__section--nav {
     padding-bottom: 1rem;

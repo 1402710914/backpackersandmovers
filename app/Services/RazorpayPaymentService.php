@@ -23,6 +23,14 @@ class RazorpayPaymentService
         return (string) config('payments.razorpay.key');
     }
 
+    public function isConfigured(): bool
+    {
+        $key = trim((string) config('payments.razorpay.key'));
+        $secret = trim((string) config('payments.razorpay.secret'));
+
+        return $key !== '' && $secret !== '';
+    }
+
     /**
      * @return array<string, mixed>
      */

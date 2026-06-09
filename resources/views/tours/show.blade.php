@@ -70,7 +70,7 @@
                     <small>{{ $tour->isEducationalOuting() ? 'per member' : 'per person' }}</small>
                 </div>
                 <a href="#tour-booking" class="theme-btn">Book this tour</a>
-                <a href="{{ route('contact') }}" class="theme-btn style-2">Ask a question</a>
+                <a href="#tour-enquiry" class="theme-btn style-2">Send enquiry</a>
             </div>
         </div>
     </header>
@@ -101,6 +101,7 @@
                         @if ($tour->hasFaqSection())
                             <a href="#tour-faq">FAQ</a>
                         @endif
+                        <a href="#tour-enquiry">Enquiry</a>
                         <a href="#tour-booking">Booking</a>
                     </div>
                 </nav>

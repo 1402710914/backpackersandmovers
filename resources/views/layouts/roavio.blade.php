@@ -232,6 +232,44 @@
             margin-top: 0.2rem;
             flex-shrink: 0;
         }
+        /* Header cart icon */
+        .header-cart-link {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            background: #fff;
+            color: var(--header, #151515);
+            font-size: 1.05rem;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+        .header-cart-link:hover {
+            border-color: rgba(255, 107, 53, 0.45);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
+            color: var(--theme, #DA9B21);
+        }
+        .header-cart-link__count {
+            position: absolute;
+            top: -0.35rem;
+            right: -0.35rem;
+            min-width: 1.15rem;
+            height: 1.15rem;
+            padding: 0 0.25rem;
+            border-radius: 999px;
+            background: var(--theme, #DA9B21);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 1.15rem;
+            text-align: center;
+        }
     </style>
     @stack('styles')
 </head>
@@ -327,12 +365,16 @@
                                             <a href="#" class="site-mobile-logout">Logout</a>
                                         </li>
                                     @endguest
+                                    <li class="d-xl-none">
+                                        <a href="{{ route('cart.index') }}">Cart{{ $cartItemCount > 0 ? ' ('.$cartItemCount.')' : '' }}</a>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>
                     </div>
                 </div>
                 <div class="header-right d-flex justify-content-end align-items-center gap-2">
+                    @include('partials.header-cart-icon')
                     @guest
                         <div class="header-auth-dropdown dropdown d-none d-md-inline-block">
                             <button type="button" class="header-auth-dropdown__toggle dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">

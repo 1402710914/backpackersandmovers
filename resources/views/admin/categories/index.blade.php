@@ -17,6 +17,7 @@
         <table class="table table-hover mb-0 align-middle">
             <thead>
                 <tr>
+                    <th class="text-center" style="width: 72px;">Image</th>
                     <th>Name</th>
                     <th>Slug</th>
                     @if (($type ?? '') !== 'tour')
@@ -29,6 +30,9 @@
             <tbody>
             @foreach ($categories as $category)
                 <tr>
+                    <td class="text-center">
+                        <img src="{{ $category->listingImageUrl() }}" alt="" class="rounded border" style="width: 48px; height: 48px; object-fit: cover;">
+                    </td>
                     <td>{{ $category->name }}</td>
                     <td><code class="small">{{ $category->slug }}</code></td>
                     @if (($type ?? '') !== 'tour')
